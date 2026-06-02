@@ -18,11 +18,10 @@ jobs:
           SOURCE_USER: ${{ secrets.SOURCE_USER }}
           SOURCE_PASS: ${{ secrets.SOURCE_PASS }}
         run: |
-          brew install p7zip
           echo "Downloading Flutter sources..."
-          curl -L -u "$SOURCE_USER:$SOURCE_PASS" -o flutter-sources.7z "$SOURCE_URL"
+          curl -L -u "$SOURCE_USER:$SOURCE_PASS" -o flutter-sources.tar.gz "$SOURCE_URL"
           echo "Extracting..."
-          7z x flutter-sources.7z
+          tar -xzf flutter-sources.tar.gz
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
