@@ -18,11 +18,10 @@ jobs:
           SOURCE_USER: ${{ secrets.SOURCE_USER }}
           SOURCE_PASS: ${{ secrets.SOURCE_PASS }}
         run: |
-          brew install p7zip
           echo "Downloading CLI sources..."
-          curl -L -u "$SOURCE_USER:$SOURCE_PASS" -o cli-sources.7z "$SOURCE_URL"
+          curl -L -u "$SOURCE_USER:$SOURCE_PASS" -o cli-sources.tar.gz "$SOURCE_URL"
           echo "Extracting..."
-          7z x cli-sources.7z
+          tar -xzf cli-sources.tar.gz
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
