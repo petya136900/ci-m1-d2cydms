@@ -1,0 +1,69 @@
+name: Build Flutter macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: 'Flutter SDK version'
+        required: true
+        default: '3.27.2'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Download Flutter sources from private host
+        env:
+          SOURCE_URL: ${{ secrets.FLUTTER_SOURCE_URL }}
+          SOURCE_USER: ${{ secrets.SOURCE_USER }}
+          SOURCE_PASS: ${{ secrets.SOURCE_PASS }}
+        run: |
+          brew install p7zip
+          echo "Downloading Flutter sources..."
+          curl -L -u "$SOURCE_USER:$SOURCE_PASS" -o flutter-sources.7z "$SOURCE_URL"
+          echo "Extracting..."
+          7z x flutter-sources.7z
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ github.event.inputs.flutter_version }}
+          channel: stable
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Flutter macOS
+        run: flutter build macos --release
+
+      - name: Ad-hoc codesign
+        run: |
+          APP_PATH=$(ls build/macos/Build/Products/Release/*.app | head -n1)
+          echo "Signing $APP_PATH"
+          codesign --force --deep --sign - "$APP_PATH"
+
+      - name: Package .app into zip
+        run: |
+          cd build/macos/Build/Products/Release
+          APP_NAME=$(ls *.app | head -n1 | sed 's/\.app$//')
+          ZIP_NAME="${APP_NAME}-macos-arm64.zip"
+          zip -r "$ZIP_NAME" *.app
+          echo "Created: $ZIP_NAME"
+
+      - name: Build CLI macOS ARM64
+        run: |
+          cd cli-version
+          dart pub get
+          dart compile exe \
+            --target-os=macos \
+            --target-arch=arm64 \
+            bin/main.dart \
+            -o bin/wg2vk-cli-macos-arm64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wg2vk-macos
+          path: |
+            build/macos/Build/Products/Release/*.zip
+            cli-version/bin/wg2vk-cli-macos-arm64
