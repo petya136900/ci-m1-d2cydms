@@ -1,0 +1,46 @@
+name: Build CLI macOS ARM64
+
+on:
+  workflow_dispatch:
+    inputs:
+      dart_version:
+        description: 'Dart SDK version'
+        required: true
+        default: 'stable'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Download CLI sources from private host
+        env:
+          SOURCE_URL: ${{ secrets.CLI_SOURCE_URL }}
+          SOURCE_USER: ${{ secrets.SOURCE_USER }}
+          SOURCE_PASS: ${{ secrets.SOURCE_PASS }}
+        run: |
+          brew install p7zip
+          echo "Downloading CLI sources..."
+          curl -L -u "$SOURCE_USER:$SOURCE_PASS" -o cli-sources.7z "$SOURCE_URL"
+          echo "Extracting..."
+          7z x cli-sources.7z
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ github.event.inputs.dart_version }}
+
+      - name: Build CLI macOS ARM64
+        run: |
+          cd cli-version
+          dart pub get
+          dart compile exe \
+            --target-os=macos \
+            --target-arch=arm64 \
+            bin/main.dart \
+            -o bin/wg2vk-cli-macos-arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wg2vk-cli-macos-arm64
+          path: cli-version/bin/wg2vk-cli-macos-arm64
