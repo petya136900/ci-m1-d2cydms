@@ -37,14 +37,14 @@ jobs:
 
       - name: Ad-hoc codesign
         run: |
-          APP_PATH=$(ls build/macos/Build/Products/Release/*.app | head -n1)
+          APP_PATH=$(ls -d build/macos/Build/Products/Release/*.app | head -n1)
           echo "Signing $APP_PATH"
           codesign --force --deep --sign - "$APP_PATH"
 
       - name: Package .app into zip
         run: |
           cd build/macos/Build/Products/Release
-          APP_NAME=$(ls *.app | head -n1 | sed 's/\.app$//')
+          APP_NAME=$(ls -d *.app | head -n1 | sed 's/\.app$//')
           ZIP_NAME="${APP_NAME}-macos-arm64.zip"
           zip -r "$ZIP_NAME" *.app
           echo "Created: $ZIP_NAME"
